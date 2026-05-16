@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class FoodScanScreen extends StatefulWidget {
   const FoodScanScreen({super.key});
@@ -11,125 +13,138 @@ class FoodScanScreen extends StatefulWidget {
 }
 
 class _FoodScanScreenState extends State<FoodScanScreen> {
-  // Key của bạn
-  final String _apiKey = 'AIzaSyB7pKDn3oe-lK7GQp8W2uSMZgAVcuLtWkY';
 
-  File? _image;
-  bool _isLoading = false;
-  String? _result;
-  final ImagePicker _picker = ImagePicker();
+  final String apiKey = "AIzaSyATZWbc4iHqWC2uPCkMbyZvwBrI-LgUc8I";
 
-  @override
-  void initState() {
-    super.initState();
-    // 👇 Vừa vào màn hình là kiểm tra danh sách model ngay
-    _listAvailableModels();
-  }
+  File? image;
+  String? result;
+  bool loading = false;
 
-  // 🛠 HÀM QUAN TRỌNG: Kiểm tra xem Key này dùng được Model nào?
-  Future<void> _listAvailableModels() async {
-    print("----- ĐANG KIỂM TRA DANH SÁCH MODEL GOOGLE -----");
-    try {
-      final model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: _apiKey);
-      // Gọi thử 1 request nhẹ để check kết nối
-      print("Đang thử ping tới Google...");
-    } catch (e) {
-      print("Lỗi khởi tạo SDK: $e");
+  final picker = ImagePicker();
+
+  Future pickImage(ImageSource source) async {
+    final picked = await picker.pickImage(source: source);
+
+    if (picked != null) {
+      image = File(picked.path);
+      setState(() {});
+      scanFood();
     }
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(source: source);
-      if (pickedFile != null) {
-        setState(() {
-          _image = File(pickedFile.path);
-          _result = null;
-        });
-        _scanWithGemini();
-      }
-    } catch (e) {
-      _showError("Lỗi chọn ảnh: $e");
-    }
-  }
+  Future scanFood() async {
 
-  Future<void> _scanWithGemini() async {
-    if (_image == null) return;
+    if (image == null) return;
+
     setState(() {
-      _isLoading = true;
-      _result = "Đang kết nối...";
+      loading = true;
+      result = null;
     });
 
     try {
-      // 👇 SỬA LỖI: Dùng tên phiên bản cụ thể (Pinned Version) thay vì tên chung
-      // Thường thì tên này sẽ hoạt động khi tên ngắn bị lỗi
-      const modelName = 'gemini-1.5-flash-001';
 
-      print("🚀 Đang gọi model: $modelName");
+      final bytes = await image!.readAsBytes();
+      final base64Image = base64Encode(bytes);
 
-      final model = GenerativeModel(
-        model: modelName,
-        apiKey: _apiKey,
+      final url = Uri.parse(
+          "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=$apiKey");
+
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "contents": [
+            {
+              "parts": [
+                {
+                  "text":
+                  "Đây là ảnh món ăn. Hãy cho biết tên món, calo, protein, fat, carbs. Trả lời tiếng Việt dạng markdown."
+                },
+                {
+                  "inlineData": {
+                    "mimeType": "image/jpeg",
+                    "data": base64Image
+                  }
+                }
+              ]
+            }
+          ]
+        }),
       );
 
-      final imageBytes = await _image!.readAsBytes();
-      final prompt = TextPart("Nhìn ảnh và cho biết: Tên món, Calo, Dinh dưỡng (Protein/Carb/Fat), Healthy không? Trả lời tiếng Việt.");
-      final imagePart = DataPart('image/jpeg', imageBytes);
+      final data = jsonDecode(response.body);
 
-      final response = await model.generateContent([
-        Content.multi([prompt, imagePart])
-      ]);
-
-      if (response.text != null) {
-        setState(() => _result = response.text);
-      } else {
-        throw Exception("Kết quả rỗng");
-      }
+      setState(() {
+        result = data["candidates"][0]["content"]["parts"][0]["text"];
+      });
 
     } catch (e) {
-      print("❌ LỖI SDK CHI TIẾT: $e");
-      setState(() => _result = "LỖI: $e");
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
 
-  void _showError(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+      result = "Lỗi AI: $e";
+
+    }
+
+    setState(() {
+      loading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Gemini Food Scan (Fix)")),
-      body: ListView(
+      appBar: AppBar(title: const Text("AI Scan Calo")),
+      body: Padding(
         padding: const EdgeInsets.all(20),
-        children: [
-          GestureDetector(
-            onTap: () => _pickImage(ImageSource.gallery),
-            child: Container(
-              height: 250,
-              color: Colors.grey[200],
-              child: _image != null
-                  ? Image.file(_image!, fit: BoxFit.cover)
-                  : const Center(child: Icon(Icons.add_a_photo, size: 50)),
-            ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () => _pickImage(ImageSource.camera),
-            child: const Text("Chụp ảnh mới"),
-          ),
-          if (_isLoading) const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())),
-          if (_result != null && !_isLoading)
+        child: Column(
+          children: [
+
             Container(
-              margin: const EdgeInsets.only(top: 20),
-              padding: const EdgeInsets.all(15),
-              color: _result!.contains("LỖI") ? Colors.red[50] : Colors.green[50],
-              child: Text(_result!),
+              height: 250,
+              width: double.infinity,
+              color: Colors.grey[200],
+              child: image == null
+                  ? const Icon(Icons.fastfood, size: 80)
+                  : Image.file(image!, fit: BoxFit.cover),
             ),
-        ],
+
+            const SizedBox(height: 20),
+
+            Row(
+              children: [
+
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => pickImage(ImageSource.camera),
+                    child: const Text("Camera"),
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => pickImage(ImageSource.gallery),
+                    child: const Text("Gallery"),
+                  ),
+                ),
+
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            if (loading) const CircularProgressIndicator(),
+
+            if (result != null)
+              Expanded(
+                child: Markdown(
+                  data: result!,
+                ),
+              )
+
+          ],
+        ),
       ),
     );
   }

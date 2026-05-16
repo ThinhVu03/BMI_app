@@ -15,7 +15,7 @@ class MealPlanScreen extends StatefulWidget {
 
 class _MealPlanScreenState extends State<MealPlanScreen> with TickerProviderStateMixin {
   // Lưu ý: Nên bảo mật API Key này ở phía Server nếu phát hành thật
-  final String _groqApiKey = "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";
+  final String _groqApiKey = "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";
 
   final TextEditingController _preferenceController = TextEditingController();
   bool _isLoading = false;
@@ -238,7 +238,7 @@ Hãy trình bày rõ ràng, dễ đọc, dùng Markdown, có tổng lượng cal
             ),
           ),
           Text(
-            "Powered by Groq AI",
+            "",
             style: TextStyle(
               color: isDark ? Colors.white70 : Colors.grey,
               fontSize: 11,

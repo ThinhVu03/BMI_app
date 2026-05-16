@@ -1,0 +1,14 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\lib",
+    "\\lib\\assets",
+    "\\lib\\models",
+    "\\lib\\services",
+    "\\lib\\ui",
+    "\\lib\\ui\\screens",
+    "\\lib\\widgets"
+  ],
+  "SelectedNode": "\\lib\\ui\\screens\\history_screen.dart",
+  "PreviewInSolutionExplorer": false
+}
