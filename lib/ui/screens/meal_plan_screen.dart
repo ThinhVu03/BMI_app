@@ -15,7 +15,7 @@ class MealPlanScreen extends StatefulWidget {
 
 class _MealPlanScreenState extends State<MealPlanScreen> with TickerProviderStateMixin {
   // Lưu ý: Nên bảo mật API Key này ở phía Server nếu phát hành thật
-  final String _groqApiKey = "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";
+  final String _groqApiKey = "YOUR_API_KEY";
 
   final TextEditingController _preferenceController = TextEditingController();
   bool _isLoading = false;
