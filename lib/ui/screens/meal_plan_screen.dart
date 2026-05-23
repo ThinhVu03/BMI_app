@@ -15,11 +15,14 @@ class MealPlanScreen extends StatefulWidget {
 
 class _MealPlanScreenState extends State<MealPlanScreen> with TickerProviderStateMixin {
   // Lưu ý: Nên bảo mật API Key này ở phía Server nếu phát hành thật
-  final String _groqApiKey = "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";
+  final String _groqApiKey = "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";
 
   final TextEditingController _preferenceController = TextEditingController();
   bool _isLoading = false;
   String? _aiResponse;
+  bool _isJsonResponse = false;
+  Map<String, dynamic>? _parsedMealPlan;
+  final Set<String> _addedMeals = {};
 
   Map<String, dynamic>? _userData;
 
@@ -100,6 +103,9 @@ class _MealPlanScreenState extends State<MealPlanScreen> with TickerProviderStat
     setState(() {
       _isLoading = true;
       _aiResponse = null;
+      _isJsonResponse = false;
+      _parsedMealPlan = null;
+      _addedMeals.clear();
     });
 
     try {
@@ -111,18 +117,47 @@ class _MealPlanScreenState extends State<MealPlanScreen> with TickerProviderStat
       String userRequest = _preferenceController.text.trim();
       if (userRequest.isEmpty) userRequest = "Không có yêu cầu đặc biệt";
 
+      String targetCalText = "";
+      if (_userData?['calorieGoal'] != null) {
+        targetCalText = "• Mục tiêu Calo hàng ngày: ${_userData!['calorieGoal'].toInt()} kcal\n";
+      }
+
       final prompt = """
-Hãy đóng vai một chuyên gia dinh dưỡng.
-Tạo thực đơn 1 ngày gồm: Bữa sáng – Bữa trưa – Bữa tối.
+Hãy đóng vai một chuyên gia dinh dưỡng Việt Nam.
+Tạo thực đơn dinh dưỡng 1 ngày gồm 3 bữa: Bữa sáng, Bữa trưa, Bữa tối.
 
 Dữ liệu người dùng:
 • Giới tính: $gender
 • Tuổi: $age
 • Chiều cao: $height cm
 • Cân nặng: $weight kg
-• Yêu cầu đặc biệt: $userRequest
+$targetCalText• Yêu cầu đặc biệt: $userRequest
 
-Hãy trình bày rõ ràng, dễ đọc, dùng Markdown, có tổng lượng calo và gợi ý thay thế món ăn.
+BẮT BUỘC: Bạn phải trả về một JSON object duy nhất có cấu trúc chính xác sau (không kèm lời chào hay bất kỳ văn bản nào khác ngoài JSON):
+{
+  "meals": [
+    {
+      "type": "Bữa sáng",
+      "name": "Tên món ăn sáng Việt Nam",
+      "calories": 350,
+      "description": "Chi tiết nguyên liệu và hướng dẫn làm ngắn gọn"
+    },
+    {
+      "type": "Bữa trưa",
+      "name": "Tên món ăn trưa Việt Nam",
+      "calories": 550,
+      "description": "Mô tả ngắn"
+    },
+    {
+      "type": "Bữa tối",
+      "name": "Tên món ăn tối Việt Nam",
+      "calories": 450,
+      "description": "Mô tả ngắn"
+    }
+  ],
+  "total_calories": 1350,
+  "advice": "Lời khuyên dinh dưỡng tổng quát bằng Tiếng Việt (sử dụng Markdown định dạng đẹp)..."
+}
 """;
 
       final response = await http.post(
@@ -133,6 +168,7 @@ Hãy trình bày rõ ràng, dễ đọc, dùng Markdown, có tổng lượng cal
         },
         body: jsonEncode({
           "model": "llama-3.1-8b-instant",
+          "response_format": {"type": "json_object"},
           "messages": [
             {"role": "user", "content": prompt}
           ]
@@ -147,9 +183,36 @@ Hãy trình bày rõ ràng, dễ đọc, dùng Markdown, có tổng lượng cal
           content = utf8.decode(content.runes.toList());
         } catch (_) {}
 
-        setState(() {
-          _aiResponse = data["choices"][0]["message"]["content"];
-        });
+        // Trích xuất JSON từ phản hồi
+        String cleanJson = content.trim();
+        int startIndex = cleanJson.indexOf('{');
+        int endIndex = cleanJson.lastIndexOf('}');
+        
+        bool parsedSuccess = false;
+        if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+          cleanJson = cleanJson.substring(startIndex, endIndex + 1);
+          try {
+            final Map<String, dynamic> parsed = jsonDecode(cleanJson);
+            if (parsed.containsKey('meals') && parsed['meals'] is List) {
+              setState(() {
+                _parsedMealPlan = parsed;
+                _isJsonResponse = true;
+                _aiResponse = content;
+              });
+              parsedSuccess = true;
+            }
+          } catch (e) {
+            print("Lỗi parse JSON thực đơn: $e");
+          }
+        }
+
+        if (!parsedSuccess) {
+          setState(() {
+            _aiResponse = content;
+            _isJsonResponse = false;
+            _parsedMealPlan = null;
+          });
+        }
         _showSnackBar("✨ Thực đơn đã sẵn sàng!", isError: false);
       } else {
         setState(() {
@@ -216,7 +279,10 @@ Hãy trình bày rõ ràng, dễ đọc, dùng Markdown, có tổng lượng cal
               const SizedBox(height: 24),
               _buildGenerateButton(),
               const SizedBox(height: 30),
-              if (_aiResponse != null) _buildResultCard(isDark),
+              if (_isJsonResponse && _parsedMealPlan != null)
+                _buildStructuredResult(isDark)
+              else if (_aiResponse != null)
+                _buildResultCard(isDark),
             ],
           ),
         ),
@@ -238,7 +304,7 @@ Hãy trình bày rõ ràng, dễ đọc, dùng Markdown, có tổng lượng cal
             ),
           ),
           Text(
-            "Powered by Groq AI",
+            "",
             style: TextStyle(
               color: isDark ? Colors.white70 : Colors.grey,
               fontSize: 11,
@@ -794,6 +860,256 @@ Hãy trình bày rõ ràng, dễ đọc, dùng Markdown, có tổng lượng cal
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Future<void> _addMealFromAI(String type, String name, double calories) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final String mealKey = "$type:$name";
+    if (_addedMeals.contains(mealKey)) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final service = FirestoreService(uid: uid);
+      await service.addMeal(name, calories, type);
+      setState(() {
+        _addedMeals.add(mealKey);
+      });
+      _showSnackBar("Đã thêm '$name' vào Nhật ký ($type)!", isError: false);
+    } catch (e) {
+      _showSnackBar("Lỗi khi ghi nhận món ăn: $e", isError: true);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Widget _buildStructuredResult(bool isDark) {
+    Color cardBg = isDark ? const Color(0xFF2C2C2C) : Colors.white;
+    Color textColor = isDark ? Colors.white : Colors.black87;
+    
+    final meals = _parsedMealPlan?['meals'] as List? ?? [];
+    final totalCalories = _parsedMealPlan?['total_calories'] ?? 0;
+    final advice = _parsedMealPlan?['advice'] ?? "";
+    final double userGoal = (_userData?['calorieGoal'] as num?)?.toDouble() ?? 2000.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF52BE80).withOpacity(0.2),
+                    const Color(0xFF27AE60).withOpacity(0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.menu_book_rounded,
+                color: Color(0xFF52BE80),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              "Gợi ý thực đơn hôm nay",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Card Tóm tắt lượng Calo
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: const Color(0xFF52BE80).withOpacity(0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              )
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    "Calo gợi ý",
+                    style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "${totalCalories} kcal",
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF52BE80)),
+                  ),
+                ],
+              ),
+              Container(width: 1, height: 30, color: isDark ? Colors.white10 : Colors.grey[300]),
+              Column(
+                children: [
+                  Text(
+                    "Mục tiêu của bạn",
+                    style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "${userGoal.toInt()} kcal",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Danh sách bữa ăn chính
+        ...meals.map((mealData) {
+          final meal = mealData as Map<String, dynamic>;
+          final type = meal['type']?.toString() ?? "Bữa chính";
+          final name = meal['name']?.toString() ?? "";
+          final double calories = (meal['calories'] as num?)?.toDouble() ?? 0.0;
+          final description = meal['description']?.toString() ?? "";
+          final String mealKey = "$type:$name";
+          final bool isAdded = _addedMeals.contains(mealKey);
+
+          IconData typeIcon = Icons.restaurant;
+          Color iconColor = Colors.orange;
+          if (type.toLowerCase().contains("sáng")) {
+            typeIcon = Icons.wb_sunny_outlined;
+            iconColor = Colors.amber;
+          } else if (type.toLowerCase().contains("trưa")) {
+            typeIcon = Icons.light_mode;
+            iconColor = Colors.orange;
+          } else if (type.toLowerCase().contains("tối")) {
+            typeIcon = Icons.nights_stay_outlined;
+            iconColor = Colors.indigo;
+          }
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(typeIcon, color: iconColor, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      type,
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: iconColor),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        "${calories.toInt()} kcal",
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    isAdded
+                        ? Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.check, color: Colors.white, size: 14),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF52BE80), size: 22),
+                            onPressed: () => _addMealFromAI(type, name, calories),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  name,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.grey.shade700, height: 1.4),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+
+        const SizedBox(height: 12),
+        // Thẻ Lời khuyên
+        if (advice.isNotEmpty) ...[
+          Text(
+            "Lời khuyên dinh dưỡng",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.blue.withOpacity(0.1)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: MarkdownBody(
+              data: advice,
+              styleSheet: MarkdownStyleSheet(
+                p: TextStyle(fontSize: 14, height: 1.5, color: textColor),
+                strong: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF667eea)),
+                listBullet: const TextStyle(color: Color(0xFF667eea)),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

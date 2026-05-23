@@ -41,48 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBvYrP8G3rRyUUuoVfBx66Sz0TZHWlytFo',
-    appId: '1:1019732117812:web:e6c7d40ea67685e162fd61',
-    messagingSenderId: '1019732117812',
-    projectId: 'doanbmiapp',
-    authDomain: 'doanbmiapp.firebaseapp.com',
-    storageBucket: 'doanbmiapp.firebasestorage.app',
+    apiKey: 'AIzaSyDgp5G-Vx94sBM5ZwZh4CSFD1EwGy8R_-w',
+    appId: '1:1061074111697:web:e6c7d40ea67685e162fd61',
+    messagingSenderId: '1061074111697',
+    projectId: 'dacnbmiapp',
+    authDomain: 'dacnbmiapp.firebaseapp.com',
+    storageBucket: 'dacnbmiapp.firebasestorage.app',
     measurementId: 'G-Z4JV3P95EY',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBi0NKkM_xqQsUQfBz7jvTmTDnRfBE2DR4',
-    appId: '1:1019732117812:android:f36a52730e0103bb62fd61',
-    messagingSenderId: '1019732117812',
-    projectId: 'doanbmiapp',
-    storageBucket: 'doanbmiapp.firebasestorage.app',
+    apiKey: 'AIzaSyDgp5G-Vx94sBM5ZwZh4CSFD1EwGy8R_-w',
+    appId: '1:1061074111697:android:e9290e1f25126c8c2309f0',
+    messagingSenderId: '1061074111697',
+    projectId: 'dacnbmiapp',
+    storageBucket: 'dacnbmiapp.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCeJPiRi7S0ouG9d5ocE-sjkHMZElMHLNM',
-    appId: '1:1019732117812:ios:a40342a6b7a4ab5c62fd61',
-    messagingSenderId: '1019732117812',
-    projectId: 'doanbmiapp',
-    storageBucket: 'doanbmiapp.firebasestorage.app',
+    apiKey: 'AIzaSyDgp5G-Vx94sBM5ZwZh4CSFD1EwGy8R_-w',
+    appId: '1:1061074111697:ios:a40342a6b7a4ab5c62fd61',
+    messagingSenderId: '1061074111697',
+    projectId: 'dacnbmiapp',
+    storageBucket: 'dacnbmiapp.firebasestorage.app',
     iosBundleId: 'com.example.bmiApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCeJPiRi7S0ouG9d5ocE-sjkHMZElMHLNM',
-    appId: '1:1019732117812:ios:a40342a6b7a4ab5c62fd61',
-    messagingSenderId: '1019732117812',
-    projectId: 'doanbmiapp',
-    storageBucket: 'doanbmiapp.firebasestorage.app',
+    apiKey: 'AIzaSyDgp5G-Vx94sBM5ZwZh4CSFD1EwGy8R_-w',
+    appId: '1:1061074111697:ios:a40342a6b7a4ab5c62fd61',
+    messagingSenderId: '1061074111697',
+    projectId: 'dacnbmiapp',
+    storageBucket: 'dacnbmiapp.firebasestorage.app',
     iosBundleId: 'com.example.bmiApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBvYrP8G3rRyUUuoVfBx66Sz0TZHWlytFo',
-    appId: '1:1019732117812:web:ccd2bf13cafb8c2462fd61',
-    messagingSenderId: '1019732117812',
-    projectId: 'doanbmiapp',
-    authDomain: 'doanbmiapp.firebaseapp.com',
-    storageBucket: 'doanbmiapp.firebasestorage.app',
+    apiKey: 'AIzaSyDgp5G-Vx94sBM5ZwZh4CSFD1EwGy8R_-w',
+    appId: '1:1061074111697:web:ccd2bf13cafb8c2462fd61',
+    messagingSenderId: '1061074111697',
+    projectId: 'dacnbmiapp',
+    authDomain: 'dacnbmiapp.firebaseapp.com',
+    storageBucket: 'dacnbmiapp.firebasestorage.app',
     measurementId: 'G-066EW6QMZ0',
   );
 }

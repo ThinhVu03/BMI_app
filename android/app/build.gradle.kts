@@ -10,6 +10,11 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    androidResources {
+        noCompress += listOf("tflite", "lite")
+    }
+
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -25,6 +30,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+        }
     }
 
     buildTypes {
@@ -40,6 +48,7 @@ flutter {
 
 dependencies {
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
 }
 // --- Dán vào cuối file ---
 configurations.all {

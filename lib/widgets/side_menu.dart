@@ -9,6 +9,7 @@ import '../ui/screens/profile_screen.dart';
 import '../ui/screens/exercise_screen.dart';
 import '../ui/screens/settings_screen.dart';
 import '../ui/screens/food_scan_screen.dart'; // ✅ Đã thêm Food Scan
+import '../ui/screens/calorie_tracker_screen.dart'; // ✅ Đã thêm Theo dõi Calo
 
 // Import Services & Widgets
 import '../services/auth_service.dart';
@@ -97,6 +98,11 @@ class _SideMenuState extends State<SideMenu> {
                 _item(context, Icons.camera_alt, "Quét món ăn", Colors.teal, () {
                   Navigator.pop(context);
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const FoodScanScreen()));
+                }),
+
+                _item(context, Icons.local_fire_department_rounded, "Theo dõi Calo", Colors.orangeAccent, () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CalorieTrackerScreen()));
                 }),
 
                 _item(context, Icons.fitness_center, "Bài tập", Colors.purple, () {

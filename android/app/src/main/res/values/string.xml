@@ -2,9 +2,9 @@
 <resources>
     <string name="app_name">BMI Tracker</string>
 
-    <string name="facebook_app_id">1370840447661422</string>
+    <string name="facebook_app_id">1484154012825688</string>
 
-    <string name="fb_login_protocol_scheme">fb1370840447661422</string>
+    <string name="fb_login_protocol_scheme">fb1484154012825688</string>
 
-    <string name="facebook_client_token">2d1d5af298656974f761495fe2f985e9</string>
+    <string name="facebook_client_token">aeaab94f5a9ed52edcd328b42521cfcd</string>
 </resources>

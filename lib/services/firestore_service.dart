@@ -63,6 +63,16 @@ class FirestoreService {
     }
   }
 
+  /// 2b. Lấy stream thông tin Hồ sơ người dùng
+  Stream<Map<String, dynamic>?> getUserProfileStream() {
+    return _userDocRef.snapshots().map((snapshot) {
+      if (snapshot.exists) {
+        return snapshot.data() as Map<String, dynamic>;
+      }
+      return null;
+    });
+  }
+
   // ============ PHẦN BMI RECORDS ============
 
   /// Thêm lượt đo mới
@@ -124,6 +134,73 @@ class FirestoreService {
     } catch (e) {
       print("Lỗi xóa dữ liệu: $e");
       throw Exception('Lỗi khi xóa toàn bộ dữ liệu: $e');
+    }
+  }
+
+  // ============ PHẦN QUẢN LÝ CALO & BỮA ĂN ============
+
+  // Reference tới collection 'meals'
+  CollectionReference get _mealsRef {
+    return _userDocRef.collection('meals');
+  }
+
+  /// 1. Thêm một bữa ăn mới
+  Future<void> addMeal(String name, double calories, String mealType) async {
+    try {
+      await _mealsRef.add({
+        'name': name,
+        'calories': calories,
+        'mealType': mealType,
+        'dateTime': Timestamp.now(),
+      });
+    } on FirebaseException catch (e) {
+      throw _handleFirestoreException(e);
+    } catch (e) {
+      throw Exception('Lỗi thêm bữa ăn: $e');
+    }
+  }
+
+  /// 2. Lấy stream danh sách bữa ăn trong ngày
+  Stream<List<Map<String, dynamic>>> getDailyMealsStream(DateTime date) {
+    DateTime start = DateTime(date.year, date.month, date.day);
+    DateTime end = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
+    
+    return _mealsRef
+        .where('dateTime', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('dateTime', isLessThanOrEqualTo: Timestamp.fromDate(end))
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id; // Lưu id tài liệu để phục vụ việc xóa
+        return data;
+      }).toList();
+    });
+  }
+
+  /// 3. Xóa một bữa ăn
+  Future<void> deleteMeal(String mealId) async {
+    try {
+      await _mealsRef.doc(mealId).delete();
+    } on FirebaseException catch (e) {
+      throw _handleFirestoreException(e);
+    } catch (e) {
+      throw Exception('Lỗi xóa bữa ăn: $e');
+    }
+  }
+
+  /// 4. Cập nhật cấu hình mục tiêu calo
+  Future<void> updateCalorieGoal(double goal, String activityLevel, String weightGoal) async {
+    try {
+      await _userDocRef.set({
+        'calorieGoal': goal,
+        'activityLevel': activityLevel,
+        'weightGoal': weightGoal,
+      }, SetOptions(merge: true));
+    } on FirebaseException catch (e) {
+      throw _handleFirestoreException(e);
+    } catch (e) {
+      throw Exception('Lỗi cập nhật mục tiêu calo: $e');
     }
   }
 

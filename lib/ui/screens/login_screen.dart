@@ -109,9 +109,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       await action();
     } on Exception catch (e) {
       if (!mounted) return;
-      _safeShowSnackBar(_getErrorMessage(e), isError: true);
+      final errMsg = _getErrorMessage(e);
+      if (!errMsg.contains('sign_in_canceled')) {
+        _safeShowSnackBar(errMsg, isError: true);
+      }
     } catch (e) {
-      if (mounted) _safeShowSnackBar("Đã xảy ra lỗi: $e", isError: true);
+      if (mounted) {
+        final errStr = e.toString();
+        if (!errStr.contains('sign_in_canceled')) {
+          _safeShowSnackBar("Đã xảy ra lỗi: $errStr", isError: true);
+        }
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -223,7 +231,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   String _getErrorMessage(Exception e) {
-    return e.toString();
+    String msg = e.toString();
+    if (msg.startsWith('Exception: ')) {
+      msg = msg.substring(11);
+    }
+    return msg;
   }
 
   void _safeShowSnackBar(String message, {bool isError = true}) {
@@ -435,14 +447,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                           Expanded(child: _buildSocialButton(
                                             iconPath: 'https://www.svgrepo.com/show/475656/google-color.svg',
                                             label: "Google",
-                                            onTap: () async => await _authService.signInWithGoogle(),
+                                            onTap: () => _handleAuthAction(() async {
+                                              await _authService.signInWithGoogle();
+                                            }, checkValidation: false),
                                           )),
                                           const SizedBox(width: 16),
                                           Expanded(child: _buildSocialButton(
                                             icon: Icons.facebook_rounded,
                                             iconColor: const Color(0xFF1877F2),
                                             label: "Facebook",
-                                            onTap: () async => await _authService.signInWithFacebook(),
+                                            onTap: () => _handleAuthAction(() async {
+                                              await _authService.signInWithFacebook();
+                                            }, checkValidation: false),
                                           )),
                                         ],
                                       ),
