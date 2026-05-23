@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1061074111697",
+    "project_id": "dacnbmiapp",
+    "storage_bucket": "dacnbmiapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1061074111697:android:e9290e1f25126c8c2309f0",
+        "android_client_info": {
+          "package_name": "com.example.bmi_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1061074111697-bb7jh66r3nmq880abiamsgg8lc1fu304.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.bmi_app",
+            "certificate_hash": "a7404248bb7e318570fe030ebdae5aa77f41a7a4"
+          }
+        },
+        {
+          "client_id": "1061074111697-2c4cvh2ileq1gtovec51k2m043k1c8e1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgp5G-Vx94sBM5ZwZh4CSFD1EwGy8R_-w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1061074111697-2c4cvh2ileq1gtovec51k2m043k1c8e1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
