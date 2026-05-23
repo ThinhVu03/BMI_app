@@ -11,7 +11,7 @@ import '../../services/firestore_service.dart';
 // ==========================================
 class OpenRouterFoodService {
   // DÁN API KEY TỪ OPENROUTER CỦA BẠN VÀO ĐÂY (Bắt đầu bằng sk-or-v1-...)
-  static const String _apiKey = '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';
+  static const String _apiKey = 'YOUR_API_KEY';
 
   // Cơ sở dữ liệu calo món ăn Việt Nam nội bộ để tra cứu tức thì
   static const Map<String, Map<String, String>> _localCalorieDb = {
